@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marouthèque</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+html { color-scheme: light dark; }
+body { margin: 0; }
+/* Concept : un catalogue dense à gauche, filtres en tête, statistiques dans un second onglet. */
+:root {
+  --bg: #eff0f4;
+  --surface: #ffffff;
+  --surface-2: #e6e8ee;
+  --fg: #14161c;
+  --muted: #5c6270;
+  --line: #d6d9e1;
+  --accent: #b5e61d;
+  --accent-ink: #1a2300;
+  --accent-text: #466400;
+  --fav: #e5a100;
+  --tile-l: 84%;
+  --tile-ink: 24%;
+  --font-display: "Chakra Petch", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0f14;
+    --surface: #161a22;
+    --surface-2: #1e232d;
+    --fg: #eceef3;
+    --muted: #9099a8;
+    --line: #2a303c;
+    --accent: #c6f432;
+    --accent-ink: #1a2300;
+    --accent-text: #c6f432;
+    --fav: #ffc21a;
+    --tile-l: 26%;
+    --tile-ink: 82%;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d0f14;
+  --surface: #161a22;
+  --surface-2: #1e232d;
+  --fg: #eceef3;
+  --muted: #9099a8;
+  --line: #2a303c;
+  --accent: #c6f432;
+  --accent-ink: #1a2300;
+  --accent-text: #c6f432;
+  --fav: #ffc21a;
+  --tile-l: 26%;
+  --tile-ink: 82%;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent-text); outline-offset: 2px; }
+
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--font-display); font-size: 2.2rem; line-height: 1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 6px 0 0; }
+.progress { min-width: 220px; flex: 1 1 260px; max-width: 420px; }
+.progress .top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.progress .top b { color: var(--fg); font-family: var(--font-display); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 14px; font-weight: 600; color: var(--muted); }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+
+.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; align-items: center; }
+.tools .search { grid-column: 1 / -1; }
+.field { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; min-width: 0; }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.countline { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { background: var(--surface); border: 0; padding: 5px 10px; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+.add { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; align-items: end; }
+.add label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+.primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 10px 14px; font-weight: 600; }
+
+.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.list.rows { grid-template-columns: 1fr; }
+.card { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.card.is-done { border-color: var(--accent-text); }
+.tile { width: 56px; height: 56px; border-radius: 8px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 1.15rem;
+  background: hsl(var(--h) 50% var(--tile-l)); color: hsl(var(--h) 45% var(--tile-ink)); }
+.info { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.info h3 { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.meta { margin: 0; color: var(--muted); font-size: 12px; }
+.plats { display: flex; flex-wrap: wrap; gap: 4px; }
+.plat { font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; background: var(--surface-2); color: var(--muted); padding: 1px 6px; border-radius: 4px; }
+.ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 2px; }
+.ctl select { background: var(--surface-2); border: 0; border-radius: 6px; padding: 4px 6px; font-size: 12px; }
+.stars { display: inline-flex; }
+.stars button { background: none; border: 0; padding: 0 1px; font-size: 15px; line-height: 1; color: var(--line); }
+.stars button.on { color: var(--fav); }
+.side { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.chk, .fav, .del { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 16px; line-height: 1; }
+.chk[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.fav { color: var(--muted); }
+.fav[aria-pressed="true"] { color: var(--fav); border-color: var(--fav); }
+.del { font-size: 13px; color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 40px 12px; border: 1px dashed var(--line); border-radius: 10px; }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.kpi span { display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.kpi b { font-family: var(--font-display); font-size: 1.8rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.panel h2 { font-family: var(--font-display); font-size: 1rem; margin: 0 0 10px; }
+.row { display: grid; grid-template-columns: 96px minmax(0, 1fr) 52px; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.row .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .num { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.track { height: 12px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.track > i { display: block; height: 100%; background: var(--line); position: relative; }
+.track > i > u { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--surface-2); margin-bottom: 10px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+.top li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.top { list-style: none; margin: 0; padding: 0; }
+.note { color: var(--muted); font-size: 12px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; font-weight: 500; }
+.btn:hover { border-color: var(--accent-text); }
+.titlebtn { background: none; border: 0; padding: 0; text-align: left; font: inherit; font-weight: 600; color: inherit; }
+.titlebtn:hover { color: var(--accent-text); text-decoration: underline; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 10px; background: var(--accent); color: var(--accent-ink); border-radius: 4px; padding: 1px 6px; font-weight: 600; }
+.modal { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.55); display: flex; justify-content: center; overflow-y: auto;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+.sheet { background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; width: 100%; max-width: 520px; padding: 18px; display: flex; flex-direction: column; gap: 14px; margin: auto; }
+.sheet h2 { font-family: var(--font-display); font-size: 1.3rem; margin: 0; overflow-wrap: anywhere; }
+.sheet .head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.sheet .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.sheet label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+.sheet textarea { min-height: 84px; resize: vertical; }
+.colchecks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; }
+.colitem { display: inline-flex; align-items: center; gap: 4px; }
+.colitem label { flex-direction: row; align-items: center; gap: 6px; color: var(--fg); font-size: 13px; }
+.del.mini { width: 22px; height: 22px; font-size: 11px; border-radius: 6px; }
+.addcol { display: flex; gap: 8px; margin-top: 8px; }
+.mates { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.mates .btn { font-size: 12px; padding: 4px 8px; }
+.goal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; margin-bottom: 10px; font-size: 13px; }
+.goal.ok b { color: var(--accent-text); }
+.goal .bar { grid-column: 1 / -1; height: 6px; }
+.kpi b.small { font-size: 1.05rem; display: block; padding-top: 6px; overflow-wrap: anywhere; }
+.summary { white-space: pre-wrap; background: var(--surface-2); border-radius: 8px; padding: 10px; font-family: var(--font-body); font-size: 13px; margin: 0 0 10px; overflow-wrap: anywhere; }
+.cmp p { margin: 10px 0 0; }
+@media (max-width: 520px) { .list { grid-template-columns: 1fr; } .row { grid-template-columns: 80px minmax(0,1fr) 46px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Marouthèque</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="progress">
+      <div class="top"><span>Jeux terminés</span><b id="pCount">0 / 0</b></div>
+      <div class="bar"><i id="pBar" style="width:0%"></i></div>
+    </div>
+  </header>
+
+  <div class="actions">
+    <button class="btn" id="surpriseBtn" type="button">🎲 Surprends-moi</button>
+    <button class="btn" id="exportBtn" type="button">Exporter ma liste</button>
+    <button class="btn" id="importBtn" type="button">Importer une liste</button>
+    <button class="btn" id="themeBtn" type="button">Thème : auto</button>
+    <input type="file" id="impFile" accept=".json,application/json" hidden>
+  </div>
+  <div class="add" id="impBar" hidden>
+    <span id="impMsg"></span>
+    <button class="primary" id="impMerge" type="button">Fusionner</button>
+    <button class="btn" id="impReplace" type="button">Remplacer ma liste</button>
+    <button class="btn" id="impCancel" type="button">Annuler</button>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tabCat" aria-selected="true" aria-controls="viewCat" type="button">Catalogue</button>
+    <button class="tab" role="tab" id="tabStats" aria-selected="false" aria-controls="viewStats" type="button">Statistiques</button>
+  </div>
+
+  <section id="viewCat" role="tabpanel" aria-labelledby="tabCat" style="display:flex;flex-direction:column;gap:12px">
+    <div class="tools">
+      <input class="field search" id="q" type="search" placeholder="Rechercher un jeu (titre, genre, plateforme)" aria-label="Rechercher">
+      <select class="field" id="fGenre" aria-label="Genre"></select>
+      <select class="field" id="fPlat" aria-label="Plateforme"></select>
+      <select class="field" id="fStatus" aria-label="Statut"></select>
+      <select class="field" id="fSerie" aria-label="Série"></select>
+      <select class="field" id="fDecade" aria-label="Décennie"></select>
+      <select class="field" id="fCol" aria-label="Collection"></select>
+      <select class="field" id="fOwn" aria-label="Possession"></select>
+      <select class="field" id="fSort" aria-label="Tri"></select>
+      <button class="chip" id="fFav" type="button" aria-pressed="false">★ Favoris</button>
+      <button class="chip" id="addToggle" type="button" aria-expanded="false">+ Ajouter un jeu</button>
+    </div>
+
+    <form class="add" id="addForm" hidden>
+      <label>Titre<input class="field" id="aTitle" required maxlength="80" placeholder="Nom du jeu"></label>
+      <label>Année<input class="field" id="aYear" type="number" min="1950" max="2100" placeholder="2024"></label>
+      <label>Genre<select class="field" id="aGenre"></select></label>
+      <label>Plateforme<select class="field" id="aPlat"></select></label>
+      <button class="primary" type="submit">Ajouter à ma liste</button>
+    </form>
+
+    <div class="countline">
+      <span id="count"></span>
+      <span>
+        <span class="seg" role="group" aria-label="Affichage">
+          <button type="button" id="vGrid" aria-pressed="true">Grille</button>
+          <button type="button" id="vRows" aria-pressed="false">Liste</button>
+        </span>
+      </span>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section id="viewStats" role="tabpanel" aria-labelledby="tabStats" hidden style="display:none;flex-direction:column;gap:12px"></section>
+
+  <p class="note" id="saveNote"></p>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="head">
+      <div><h2 id="mTitle"></h2><p class="meta" id="mMeta" style="margin:4px 0 0;color:var(--muted);font-size:12px"></p></div>
+      <button class="btn" type="button" id="mClose" aria-label="Fermer la fiche">✕</button>
+    </div>
+    <div class="grid2">
+      <label>Possession<select class="field" id="mOwn"></select></label>
+      <label>Temps de jeu (heures)<input class="field" id="mHours" type="number" min="0" step="0.5" inputmode="decimal"></label>
+      <label>Début<input class="field" id="mD1" type="date"></label>
+      <label>Fin<input class="field" id="mD2" type="date"></label>
+    </div>
+    <label>Notes personnelles<textarea class="field" id="mNote" maxlength="1000" placeholder="Impressions, passages préférés, avancement…"></textarea></label>
+    <div>
+      <span style="font-size:12px;color:var(--muted)">Collections</span>
+      <div class="colchecks" id="mCols"></div>
+      <div class="addcol"><input class="field" id="mNewCol" maxlength="40" placeholder="Nouvelle collection (ex. À faire cet été)" aria-label="Nom de la nouvelle collection"><button class="btn" type="button" id="mAddCol">Créer</button></div>
+    </div>
+    <div id="mMatesWrap"><span style="font-size:12px;color:var(--muted)" id="mSerieName"></span><div class="mates" id="mMates"></div></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var PLAT = { P: "PC", S: "PlayStation", X: "Xbox", N: "Nintendo", M: "Mobile", R: "Rétro" };
+  var GENRES = ["Action-Aventure", "Aventure", "Arcade", "Bac à sable", "Combat", "Course", "Horreur", "MMO", "MOBA", "Monde ouvert", "Party game", "Plateforme", "Puzzle", "Rythme", "Roguelike", "RPG", "Simulation", "Sport", "Stratégie", "Survie", "Tir"];
+  var STATUS = [["", "Sans statut"], ["wish", "À jouer"], ["play", "En cours"], ["done", "Terminé"], ["drop", "Abandonné"]];
+  var STATUS_COLOR = { wish: "#6c8cff", play: "#ffb020", done: "#b5e61d", drop: "#ff6b6b", "": "#8a90a0" };
+
+  var CAT = [
+    ["Space Invaders",1978,"Arcade","R"],["Pac-Man",1980,"Arcade","R"],["Donkey Kong",1981,"Plateforme","NR"],
+    ["Tetris",1984,"Puzzle","NPM"],["Super Mario Bros.",1985,"Plateforme","N"],["The Legend of Zelda",1986,"Action-Aventure","N"],
+    ["Metroid",1986,"Action-Aventure","N"],["Castlevania",1986,"Action-Aventure","N"],["Mega Man 2",1988,"Plateforme","N"],
+    ["Super Mario World",1990,"Plateforme","N"],["Sonic the Hedgehog",1991,"Plateforme","R"],["Street Fighter II",1991,"Combat","R"],
+    ["Mortal Kombat",1992,"Combat","R"],["Doom",1993,"Tir","P"],["Super Metroid",1994,"Action-Aventure","N"],
+    ["Chrono Trigger",1995,"RPG","N"],["Command & Conquer",1995,"Stratégie","P"],["Pokémon Rouge et Bleu",1996,"RPG","N"],
+    ["Resident Evil",1996,"Horreur","SP"],["Tomb Raider",1996,"Action-Aventure","SP"],["Super Mario 64",1996,"Plateforme","N"],
+    ["Final Fantasy VII",1997,"RPG","SP"],["Gran Turismo",1997,"Course","S"],["GoldenEye 007",1997,"Tir","N"],
+    ["Tekken 3",1997,"Combat","S"],["Metal Gear Solid",1998,"Action-Aventure","S"],["The Legend of Zelda: Ocarina of Time",1998,"Action-Aventure","N"],
+    ["Half-Life",1998,"Tir","P"],["StarCraft",1998,"Stratégie","P"],["Age of Empires II",1999,"Stratégie","P"],
+    ["Counter-Strike",2000,"Tir","P"],["Diablo II",2000,"RPG","P"],["The Sims",2000,"Simulation","P"],
+    ["Baldur's Gate II",2000,"RPG","P"],["Deus Ex",2000,"RPG","P"],["Tony Hawk's Pro Skater 2",2000,"Sport","SXP"],
+    ["Silent Hill 2",2001,"Horreur","S"],["Halo: Combat Evolved",2001,"Tir","X"],["Grand Theft Auto III",2001,"Monde ouvert","PSX"],
+    ["Max Payne",2001,"Tir","P"],["Super Smash Bros. Melee",2001,"Combat","N"],["RuneScape",2001,"MMO","P"],
+    ["Warcraft III",2002,"Stratégie","P"],["The Elder Scrolls III: Morrowind",2002,"RPG","PX"],["Metroid Prime",2002,"Action-Aventure","N"],
+    ["Star Wars: Knights of the Old Republic",2003,"RPG","PX"],["World of Warcraft",2004,"MMO","P"],["Half-Life 2",2004,"Tir","P"],
+    ["Grand Theft Auto: San Andreas",2004,"Monde ouvert","PSX"],["Resident Evil 4",2005,"Horreur","SN"],["Shadow of the Colossus",2005,"Action-Aventure","S"],
+    ["Civilization IV",2005,"Stratégie","P"],["Need for Speed: Most Wanted",2005,"Course","PSX"],["Wii Sports",2006,"Sport","N"],
+    ["The Elder Scrolls IV: Oblivion",2006,"RPG","PSX"],["Gears of War",2006,"Tir","X"],["Portal",2007,"Puzzle","PX"],
+    ["BioShock",2007,"Tir","PSX"],["Mass Effect",2007,"RPG","PX"],["Crysis",2007,"Tir","P"],
+    ["Call of Duty 4: Modern Warfare",2007,"Tir","PSX"],["Super Mario Galaxy",2007,"Plateforme","N"],["Assassin's Creed",2007,"Action-Aventure","PSX"],
+    ["Team Fortress 2",2007,"Tir","P"],["Fallout 3",2008,"RPG","PSX"],["Left 4 Dead",2008,"Tir","PX"],
+    ["Braid",2008,"Plateforme","PX"],["Mario Kart Wii",2008,"Course","N"],["League of Legends",2009,"MOBA","P"],
+    ["Angry Birds",2009,"Puzzle","M"],["Mass Effect 2",2010,"RPG","PX"],["Red Dead Redemption",2010,"Monde ouvert","SX"],
+    ["Super Meat Boy",2010,"Plateforme","P"],["StarCraft II",2010,"Stratégie","P"],["Amnesia: The Dark Descent",2010,"Horreur","P"],
+    ["Minecraft",2011,"Bac à sable","PSXNM"],["Terraria",2011,"Bac à sable","PSXNM"],["Dark Souls",2011,"RPG","PSXP"],
+    ["The Elder Scrolls V: Skyrim",2011,"RPG","PSXN"],["Portal 2",2011,"Puzzle","PSX"],["Batman: Arkham City",2011,"Action-Aventure","PSX"],
+    ["The Binding of Isaac",2011,"Roguelike","P"],["Journey",2012,"Aventure","S"],["The Walking Dead",2012,"Aventure","PSXM"],
+    ["XCOM: Enemy Unknown",2012,"Stratégie","PSXM"],["Dishonored",2012,"Action-Aventure","PSX"],["Borderlands 2",2012,"Tir","PSX"],
+    ["Guild Wars 2",2012,"MMO","P"],["Candy Crush Saga",2012,"Puzzle","M"],["Clash of Clans",2012,"Stratégie","M"],
+    ["Dota 2",2013,"MOBA","P"],["Grand Theft Auto V",2013,"Monde ouvert","PSX"],["The Last of Us",2013,"Action-Aventure","S"],
+    ["Papers, Please",2013,"Puzzle","PM"],["Final Fantasy XIV",2013,"MMO","PS"],["Outlast",2013,"Horreur","PSX"],
+    ["Don't Starve",2013,"Survie","PSXN"],["Flappy Bird",2013,"Arcade","M"],["Five Nights at Freddy's",2014,"Horreur","PM"],
+    ["Hearthstone",2014,"Stratégie","PM"],["Shovel Knight",2014,"Plateforme","PSXN"],["Monument Valley",2014,"Puzzle","M"],
+    ["The Witcher 3: Wild Hunt",2015,"RPG","PSX"],["Bloodborne",2015,"RPG","S"],["Undertale",2015,"RPG","PSN"],
+    ["Rocket League",2015,"Sport","PSXN"],["Fallout 4",2015,"RPG","PSX"],["Splatoon",2015,"Tir","N"],
+    ["Cities: Skylines",2015,"Simulation","PSXN"],["Persona 5",2016,"RPG","S"],["Dark Souls III",2016,"RPG","PSX"],
+    ["Overwatch",2016,"Tir","PSXN"],["DOOM",2016,"Tir","PSXN"],["Stardew Valley",2016,"Simulation","PSXNM"],
+    ["Inside",2016,"Puzzle","PSXN"],["Civilization VI",2016,"Stratégie","PSXN"],["Pokémon GO",2016,"Aventure","M"],
+    ["The Legend of Zelda: Breath of the Wild",2017,"Monde ouvert","N"],["Super Mario Odyssey",2017,"Plateforme","N"],["Mario Kart 8 Deluxe",2017,"Course","N"],
+    ["Cuphead",2017,"Plateforme","PXN"],["Hollow Knight",2017,"Action-Aventure","PSXN"],["NieR: Automata",2017,"RPG","PSX"],
+    ["Horizon Zero Dawn",2017,"Monde ouvert","SP"],["PUBG: Battlegrounds",2017,"Tir","PSX"],["Fortnite",2017,"Tir","PSXNM"],
+    ["God of War",2018,"Action-Aventure","S"],["Red Dead Redemption 2",2018,"Monde ouvert","PSX"],["Marvel's Spider-Man",2018,"Monde ouvert","S"],
+    ["Super Smash Bros. Ultimate",2018,"Combat","N"],["Celeste",2018,"Plateforme","PSXN"],["Dead Cells",2018,"Roguelike","PSXN"],
+    ["Monster Hunter: World",2018,"Action-Aventure","PSX"],["Return of the Obra Dinn",2018,"Puzzle","PSXN"],["Subnautica",2018,"Survie","PSXN"],
+    ["RimWorld",2018,"Simulation","P"],["Into the Breach",2018,"Stratégie","PN"],["Forza Horizon 4",2018,"Course","PX"],
+    ["Beat Saber",2018,"Rythme","PS"],["Among Us",2018,"Party game","PNM"],["Disco Elysium",2019,"RPG","PSXN"],
+    ["Death Stranding",2019,"Action-Aventure","PS"],["Outer Wilds",2019,"Aventure","PSX"],["Control",2019,"Action-Aventure","PSX"],
+    ["Sekiro: Shadows Die Twice",2019,"Action-Aventure","PSX"],["Resident Evil 2 (remake)",2019,"Horreur","PSX"],["Slay the Spire",2019,"Roguelike","PSXNM"],
+    ["Baba Is You",2019,"Puzzle","PSXN"],["Anno 1800",2019,"Stratégie","P"],["Animal Crossing: New Horizons",2020,"Simulation","N"],
+    ["Hades",2020,"Roguelike","PSXN"],["Half-Life: Alyx",2020,"Tir","P"],["The Last of Us Part II",2020,"Action-Aventure","S"],
+    ["Ghost of Tsushima",2020,"Monde ouvert","S"],["Cyberpunk 2077",2020,"RPG","PSX"],["Genshin Impact",2020,"RPG","PSM"],
+    ["Valorant",2020,"Tir","P"],["Fall Guys",2020,"Party game","PSXN"],["Factorio",2020,"Simulation","P"],
+    ["Crusader Kings III",2020,"Stratégie","PSX"],["Valheim",2021,"Survie","PX"],["Resident Evil Village",2021,"Horreur","PSX"],
+    ["Elden Ring",2022,"RPG","PSX"],["God of War Ragnarök",2022,"Action-Aventure","S"],["Baldur's Gate 3",2023,"RPG","PSX"],
+    ["The Legend of Zelda: Tears of the Kingdom",2023,"Monde ouvert","N"],["Hogwarts Legacy",2023,"RPG","PSX"],["Starfield",2023,"RPG","PX"],
+    ["Lies of P",2023,"RPG","PSX"],["Alan Wake 2",2023,"Horreur","PSX"],["Resident Evil 4 (remake)",2023,"Horreur","PSX"],
+    ["Marvel's Spider-Man 2",2023,"Monde ouvert","S"],["Final Fantasy VII Rebirth",2024,"RPG","S"],["Helldivers 2",2024,"Tir","PS"],
+    ["Black Myth: Wukong",2024,"Action-Aventure","PS"],["Astro Bot",2024,"Plateforme","S"],["Balatro",2024,"Roguelike","PSXNM"],
+    ["Clair Obscur: Expedition 33",2025,"RPG","PSX"],["Hollow Knight: Silksong",2025,"Action-Aventure","PSXN"],
+    ["Pong",1972,"Arcade","R"],["Asteroids",1979,"Arcade","R"],["Galaga",1981,"Arcade","R"],["Frogger",1981,"Arcade","R"],
+    ["Ms. Pac-Man",1982,"Arcade","R"],["Pitfall!",1982,"Plateforme","R"],["Out Run",1986,"Course","R"],["Super Mario Bros. 3",1988,"Plateforme","N"],
+    ["F-Zero",1990,"Course","N"],["The Secret of Monkey Island",1990,"Aventure","P"],["Lemmings",1991,"Puzzle","P"],
+    ["The Legend of Zelda: A Link to the Past",1991,"Action-Aventure","N"],["Super Mario Kart",1992,"Course","N"],
+    ["Secret of Mana",1993,"RPG","N"],["Myst",1993,"Aventure","P"],["SimCity 2000",1993,"Simulation","P"],["NBA Jam",1993,"Sport","R"],
+    ["Day of the Tentacle",1993,"Aventure","P"],["EarthBound",1994,"RPG","N"],["Final Fantasy VI",1994,"RPG","N"],
+    ["Worms",1995,"Stratégie","P"],["Wipeout",1995,"Course","S"],["Diablo",1996,"RPG","P"],["Quake",1996,"Tir","P"],
+    ["Duke Nukem 3D",1996,"Tir","P"],["Civilization II",1996,"Stratégie","P"],["Crash Bandicoot",1996,"Plateforme","S"],
+    ["Mario Kart 64",1996,"Course","N"],["Fallout",1997,"RPG","P"],["Final Fantasy Tactics",1997,"Stratégie","S"],
+    ["Castlevania: Symphony of the Night",1997,"Action-Aventure","S"],["Banjo-Kazooie",1998,"Plateforme","N"],
+    ["Grim Fandango",1998,"Aventure","P"],["Unreal",1998,"Tir","P"],["Thief: The Dark Project",1998,"Action-Aventure","P"],
+    ["Mario Party",1998,"Party game","N"],["Dance Dance Revolution",1998,"Rythme","R"],["Xenogears",1998,"RPG","S"],
+    ["Pokémon Or et Argent",1999,"RPG","N"],["Quake III Arena",1999,"Tir","P"],["Shenmue",1999,"Aventure","R"],
+    ["Planescape: Torment",1999,"RPG","P"],["System Shock 2",1999,"Tir","P"],["EverQuest",1999,"MMO","P"],
+    ["RollerCoaster Tycoon",1999,"Simulation","P"],["Crazy Taxi",1999,"Course","R"],["The Legend of Zelda: Majora's Mask",2000,"Action-Aventure","N"],
+    ["Final Fantasy IX",2000,"RPG","S"],["Jet Set Radio",2000,"Action-Aventure","R"],["Devil May Cry",2001,"Action-Aventure","S"],
+    ["Ico",2001,"Aventure","S"],["Final Fantasy X",2001,"RPG","S"],["Metal Gear Solid 2: Sons of Liberty",2001,"Action-Aventure","S"],
+    ["Phoenix Wright: Ace Attorney",2001,"Aventure","N"],["Battlefield 1942",2002,"Tir","P"],["Kingdom Hearts",2002,"RPG","S"],
+    ["Grand Theft Auto: Vice City",2002,"Monde ouvert","PSX"],["Super Mario Sunshine",2002,"Plateforme","N"],
+    ["Pokémon Rubis et Saphir",2002,"RPG","N"],["Splinter Cell",2002,"Action-Aventure","PSX"],["Call of Duty",2003,"Tir","P"],
+    ["Prince of Persia: Les Sables du temps",2003,"Action-Aventure","PSX"],["Beyond Good & Evil",2003,"Action-Aventure","PSX"],
+    ["Max Payne 2",2003,"Tir","PSX"],["Far Cry",2004,"Tir","P"],["Halo 2",2004,"Tir","X"],["Fable",2004,"RPG","X"],
+    ["Ninja Gaiden",2004,"Action-Aventure","X"],["Katamari Damacy",2004,"Puzzle","S"],["Rome: Total War",2004,"Stratégie","P"],
+    ["God of War",2005,"Action-Aventure","S"],["F.E.A.R.",2005,"Tir","P"],["Guitar Hero",2005,"Rythme","S"],
+    ["Forza Motorsport",2005,"Course","X"],["Dwarf Fortress",2006,"Simulation","P"],["Okami",2006,"Action-Aventure","S"],
+    ["The Legend of Zelda: Twilight Princess",2006,"Action-Aventure","N"],["Company of Heroes",2006,"Stratégie","P"],
+    ["Halo 3",2007,"Tir","X"],["Uncharted: Drake's Fortune",2007,"Action-Aventure","S"],["Rock Band",2007,"Rythme","SX"],
+    ["Super Smash Bros. Brawl",2008,"Combat","N"],["Spore",2008,"Simulation","P"],["Grand Theft Auto IV",2008,"Monde ouvert","PSX"],
+    ["Dead Space",2008,"Horreur","PSX"],["Dragon Age: Origins",2009,"RPG","PSX"],["Uncharted 2: Among Thieves",2009,"Action-Aventure","S"],
+    ["Assassin's Creed II",2009,"Action-Aventure","PSX"],["Call of Duty: Modern Warfare 2",2009,"Tir","PSX"],["Demon's Souls",2009,"RPG","S"],
+    ["Plants vs. Zombies",2009,"Stratégie","PM"],["Left 4 Dead 2",2009,"Tir","PX"],["Bayonetta",2009,"Action-Aventure","SX"],
+    ["Machinarium",2009,"Aventure","P"],["Just Dance",2009,"Rythme","N"],["Limbo",2010,"Puzzle","PSX"],
+    ["Civilization V",2010,"Stratégie","P"],["Fallout: New Vegas",2010,"RPG","PSX"],["Xenoblade Chronicles",2010,"RPG","N"],
+    ["The Witcher 2: Assassins of Kings",2011,"RPG","PX"],["The Legend of Zelda: Skyward Sword",2011,"Action-Aventure","N"],
+    ["Mass Effect 3",2012,"RPG","PSX"],["Far Cry 3",2012,"Tir","PSX"],["Hotline Miami",2012,"Tir","PS"],["Fez",2012,"Plateforme","PX"],
+    ["Persona 4 Golden",2012,"RPG","S"],["Euro Truck Simulator 2",2012,"Simulation","P"],["Tomb Raider",2013,"Action-Aventure","PSX"],
+    ["BioShock Infinite",2013,"Tir","PSX"],["Pokémon X et Y",2013,"RPG","N"],["Super Mario 3D World",2013,"Plateforme","N"],
+    ["Gone Home",2013,"Aventure","P"],["Europa Universalis IV",2013,"Stratégie","P"],["Project Zomboid",2013,"Survie","P"],
+    ["Alien: Isolation",2014,"Horreur","PSX"],["Middle-earth: Shadow of Mordor",2014,"Action-Aventure","PSX"],["Dark Souls II",2014,"RPG","PSX"],
+    ["Dragon Age: Inquisition",2014,"RPG","PSX"],["Destiny",2014,"Tir","SX"],["Wolfenstein: The New Order",2014,"Tir","PSX"],
+    ["Divinity: Original Sin",2014,"RPG","P"],["Life Is Strange",2015,"Aventure","PSX"],["Super Mario Maker",2015,"Plateforme","N"],
+    ["Metal Gear Solid V: The Phantom Pain",2015,"Action-Aventure","PSX"],["Tom Clancy's Rainbow Six Siege",2015,"Tir","PSX"],
+    ["Ori and the Blind Forest",2015,"Plateforme","PXN"],["Pillars of Eternity",2015,"RPG","P"],["Until Dawn",2015,"Horreur","S"],
+    ["Dying Light",2015,"Survie","PSX"],["Kerbal Space Program",2015,"Simulation","PSX"],["Crypt of the NecroDancer",2015,"Rythme","PSXN"],
+    ["Tekken 7",2015,"Combat","PSX"],["Overcooked",2016,"Party game","PSXN"],["Titanfall 2",2016,"Tir","PSX"],
+    ["Uncharted 4: A Thief's End",2016,"Action-Aventure","S"],["No Man's Sky",2016,"Aventure","PSX"],["Pokémon Soleil et Lune",2016,"RPG","N"],
+    ["Firewatch",2016,"Aventure","PSX"],["Battlefield 1",2016,"Tir","PSX"],["The Witness",2016,"Puzzle","PS"],["Enter the Gungeon",2016,"Roguelike","PSXN"],
+    ["Stellaris",2016,"Stratégie","P"],["Hearts of Iron IV",2016,"Stratégie","P"],["Planet Coaster",2016,"Simulation","P"],
+    ["Nioh",2017,"Action-Aventure","PS"],["Resident Evil 7: Biohazard",2017,"Horreur","PSX"],["Prey",2017,"Tir","PSX"],
+    ["Divinity: Original Sin 2",2017,"RPG","PSX"],["Wolfenstein II: The New Colossus",2017,"Tir","PSXN"],["Assassin's Creed Origins",2017,"Action-Aventure","PSX"],
+    ["Night in the Woods",2017,"Aventure","PSXN"],["What Remains of Edith Finch",2017,"Aventure","PSX"],["Splatoon 2",2017,"Tir","N"],
+    ["Dragon Quest XI",2017,"RPG","PSN"],["ARK: Survival Evolved",2017,"Survie","PSX"],["Detroit: Become Human",2018,"Aventure","SP"],
+    ["Octopath Traveler",2018,"RPG","NP"],["Kingdom Come: Deliverance",2018,"RPG","PSX"],["Dragon Ball FighterZ",2018,"Combat","PSXN"],
+    ["Frostpunk",2018,"Stratégie","P"],["Two Point Hospital",2018,"Simulation","PSXN"],["Rust",2018,"Survie","P"],["Raft",2018,"Survie","P"],
+    ["Fire Emblem: Three Houses",2019,"Stratégie","N"],["Luigi's Mansion 3",2019,"Action-Aventure","N"],["Pokémon Épée et Bouclier",2019,"RPG","N"],
+    ["Mortal Kombat 11",2019,"Combat","PSXN"],["Apex Legends",2019,"Tir","PSXN"],["Risk of Rain 2",2019,"Roguelike","PSXN"],
+    ["Untitled Goose Game",2019,"Aventure","PSXN"],["A Short Hike",2019,"Aventure","PSXN"],["Planet Zoo",2019,"Simulation","P"],
+    ["Sayonara Wild Hearts",2019,"Rythme","PSXN"],["Doom Eternal",2020,"Tir","PSXN"],["Final Fantasy VII Remake",2020,"RPG","SP"],
+    ["Microsoft Flight Simulator",2020,"Simulation","PX"],["Phasmophobia",2020,"Horreur","P"],["Yakuza: Like a Dragon",2020,"RPG","PSX"],
+    ["Spelunky 2",2020,"Roguelike","PSXN"],["Guilty Gear -Strive-",2021,"Combat","PSX"],["It Takes Two",2021,"Aventure","PSXN"],
+    ["Deathloop",2021,"Tir","PS"],["Metroid Dread",2021,"Action-Aventure","N"],["Forza Horizon 5",2021,"Course","PX"],
+    ["Halo Infinite",2021,"Tir","PX"],["Unpacking",2021,"Puzzle","PSXN"],["Horizon Forbidden West",2022,"Monde ouvert","S"],
+    ["Gran Turismo 7",2022,"Course","S"],["Stray",2022,"Aventure","PS"],["Pokémon Écarlate et Violet",2022,"RPG","N"],
+    ["A Plague Tale: Requiem",2022,"Aventure","PSXN"],["Vampire Survivors",2022,"Roguelike","PXM"],["Cult of the Lamb",2022,"Roguelike","PSXN"],
+    ["Tunic",2022,"Action-Aventure","PSXN"],["Street Fighter 6",2023,"Combat","PSX"],["Armored Core VI: Fires of Rubicon",2023,"Action-Aventure","PSX"],
+    ["Super Mario Bros. Wonder",2023,"Plateforme","N"],["Sea of Stars",2023,"RPG","PSXN"],["Remnant II",2023,"Tir","PSX"],
+    ["Lethal Company",2023,"Horreur","P"],["Dave the Diver",2023,"Aventure","PSXN"],["Hi-Fi Rush",2023,"Action-Aventure","PX"],
+    ["Palworld",2024,"Survie","PX"],["Dragon's Dogma 2",2024,"RPG","PSX"],["Metaphor: ReFantazio",2024,"RPG","PSX"],
+    ["Tekken 8",2024,"Combat","PSX"],["Silent Hill 2 (remake)",2024,"Horreur","PS"],["Persona 3 Reload",2024,"RPG","PSX"],
+    ["Monster Hunter Wilds",2025,"Action-Aventure","PSX"],["Split Fiction",2025,"Aventure","PSX"],["Kingdom Come: Deliverance II",2025,"RPG","PSX"],
+    ["Mario Kart World",2025,"Course","N"],["Donkey Kong Bananza",2025,"Plateforme","N"],
+    ["Tekken 2",1995,"Combat","S"],["Twisted Metal 2",1996,"Action-Aventure","S"],["PaRappa the Rapper",1996,"Rythme","S"],
+    ["Wipeout 2097",1996,"Course","S"],["Wild Arms",1996,"RPG","S"],["Alundra",1997,"RPG","S"],["Klonoa: Door to Phantomile",1997,"Plateforme","S"],
+    ["Crash Bandicoot 2: Cortex Strikes Back",1997,"Plateforme","S"],["Tomb Raider II",1997,"Action-Aventure","SP"],
+    ["Oddworld: Abe's Oddysee",1997,"Plateforme","SP"],["Ridge Racer Type 4",1998,"Course","S"],["Resident Evil 2",1998,"Horreur","SPN"],
+    ["Spyro the Dragon",1998,"Plateforme","S"],["Suikoden II",1998,"RPG","S"],["Parasite Eve",1998,"RPG","S"],
+    ["Gran Turismo 2",1999,"Course","S"],["Silent Hill",1999,"Horreur","S"],["Final Fantasy VIII",1999,"RPG","SP"],
+    ["Resident Evil 3: Nemesis",1999,"Horreur","SP"],["Crash Team Racing",1999,"Course","S"],["Ape Escape",1999,"Plateforme","S"],
+    ["Syphon Filter",1999,"Action-Aventure","S"],["Driver",1999,"Course","SP"],["Dino Crisis",1999,"Horreur","SP"],
+    ["Medal of Honor",1999,"Tir","S"],["Legacy of Kain: Soul Reaver",1999,"Action-Aventure","SP"],["Tony Hawk's Pro Skater",1999,"Sport","S"],
+    ["Chrono Cross",2000,"RPG","S"],["Vagrant Story",2000,"RPG","S"],["Dragon Quest VII",2000,"RPG","S"],
+    ["Gran Turismo 3: A-Spec",2001,"Course","S"],["Jak and Daxter: The Precursor Legacy",2001,"Plateforme","S"],["Rez",2001,"Rythme","S"],
+    ["Gitaroo Man",2001,"Rythme","S"],["Klonoa 2: Lunatea's Veil",2001,"Plateforme","S"],["Ratchet & Clank",2002,"Plateforme","S"],
+    ["Sly Cooper and the Thievius Raccoonus",2002,"Plateforme","S"],["Hitman 2: Silent Assassin",2002,"Action-Aventure","PSX"],
+    ["Dark Cloud 2",2002,"RPG","S"],["Xenosaga Episode I",2002,"RPG","S"],["Final Fantasy X-2",2003,"RPG","S"],
+    ["Silent Hill 3",2003,"Horreur","SP"],["Jak II",2003,"Plateforme","S"],["Shin Megami Tensei: Nocturne",2003,"RPG","S"],
+    ["Manhunt",2003,"Action-Aventure","SPX"],["Tony Hawk's Underground",2003,"Sport","SXN"],["SSX 3",2003,"Sport","SXN"],
+    ["EyeToy: Play",2003,"Party game","S"],["Gran Turismo 4",2004,"Course","S"],["Metal Gear Solid 3: Snake Eater",2004,"Action-Aventure","S"],
+    ["Dragon Quest VIII",2004,"RPG","S"],["Killzone",2004,"Tir","S"],["Burnout 3: Takedown",2004,"Course","SX"],
+    ["Sly 2: Band of Thieves",2004,"Plateforme","S"],["Ratchet & Clank: Up Your Arsenal",2004,"Plateforme","S"],["Lumines",2004,"Puzzle","SM"],
+    ["Tekken 5",2005,"Combat","S"],["Kingdom Hearts II",2005,"RPG","S"],["Devil May Cry 3: Dante's Awakening",2005,"Action-Aventure","S"],
+    ["Burnout Revenge",2005,"Course","SX"],["Midnight Club 3: DUB Edition",2005,"Course","SX"],["Rogue Galaxy",2005,"RPG","S"],
+    ["Ape Escape 3",2005,"Plateforme","S"],["Buzz! The Music Quiz",2005,"Party game","S"],["Psychonauts",2005,"Plateforme","PSX"],
+    ["The Warriors",2005,"Action-Aventure","SX"],["Final Fantasy XII",2006,"RPG","S"],["Persona 3",2006,"RPG","S"],
+    ["Hitman: Blood Money",2006,"Action-Aventure","PSX"],["Bully",2006,"Action-Aventure","SXP"],["Valkyrie Profile 2: Silmeria",2006,"RPG","S"],
+    ["Resistance: Fall of Man",2006,"Tir","S"],["Pro Evolution Soccer 6",2006,"Sport","SXP"],["Guitar Hero II",2006,"Rythme","SX"],
+    ["God of War II",2007,"Action-Aventure","S"],["Odin Sphere",2007,"RPG","S"],["Ratchet & Clank Future: Tools of Destruction",2007,"Plateforme","S"],
+    ["LittleBigPlanet",2008,"Plateforme","S"],["Metal Gear Solid 4: Guns of the Patriots",2008,"Action-Aventure","S"],["Valkyria Chronicles",2008,"Stratégie","SP"],
+    ["Persona 4",2008,"RPG","S"],["Disgaea 3",2008,"Stratégie","S"],["Monster Hunter Freedom Unite",2008,"Action-Aventure","S"],
+    ["God of War: Chains of Olympus",2008,"Action-Aventure","S"],["Killzone 2",2009,"Tir","S"],["Infamous",2009,"Action-Aventure","S"],
+    ["Flower",2009,"Aventure","S"],["Final Fantasy XIII",2010,"RPG","SX"],["Heavy Rain",2010,"Aventure","S"],["God of War III",2010,"Action-Aventure","S"],
+    ["Gran Turismo 5",2010,"Course","S"],["Vanquish",2010,"Tir","SXP"],["Metal Gear Solid: Peace Walker",2010,"Action-Aventure","S"],
+    ["Danganronpa: Trigger Happy Havoc",2010,"Aventure","SP"],["Uncharted 3: Drake's Deception",2011,"Action-Aventure","S"],
+    ["Ni no Kuni: Wrath of the White Witch",2011,"RPG","S"],["Catherine",2011,"Puzzle","SX"],["Infamous 2",2011,"Action-Aventure","S"],
+    ["Resistance 3",2011,"Tir","S"],["Uncharted: Golden Abyss",2011,"Action-Aventure","S"],["Gravity Rush",2012,"Action-Aventure","S"],
+    ["Beyond: Two Souls",2013,"Aventure","S"],["Puppeteer",2013,"Plateforme","S"],["Tearaway",2013,"Plateforme","S"],
+    ["Sly Cooper: Thieves in Time",2013,"Plateforme","S"],["Killzone: Shadow Fall",2013,"Tir","S"],["Gran Turismo 6",2013,"Course","S"],
+    ["Infamous: Second Son",2014,"Action-Aventure","S"],["Driveclub",2014,"Course","S"],["The Order: 1886",2015,"Action-Aventure","S"],
+    ["Yakuza 0",2015,"Action-Aventure","SP"],["Ratchet & Clank (2016)",2016,"Plateforme","S"],["Final Fantasy XV",2016,"RPG","PSX"],
+    ["Yakuza Kiwami",2016,"Action-Aventure","SP"],["Yakuza 6: The Song of Life",2016,"Action-Aventure","SP"],["Dead by Daylight",2016,"Horreur","PSXN"],
+    ["Rez Infinite",2016,"Rythme","SP"],["Abzû",2016,"Aventure","PSX"],["The Last Guardian",2016,"Aventure","S"],
+    ["Hellblade: Senua's Sacrifice",2017,"Action-Aventure","PSX"],["Uncharted: The Lost Legacy",2017,"Action-Aventure","S"],["Gravity Rush 2",2017,"Action-Aventure","S"],
+    ["Gran Turismo Sport",2017,"Course","S"],["Crash Bandicoot N. Sane Trilogy",2017,"Plateforme","PSXN"],["Shadow of the Colossus (remake)",2018,"Action-Aventure","S"],
+    ["Spyro Reignited Trilogy",2018,"Plateforme","PSXN"],["Tetris Effect",2018,"Puzzle","PSX"],["Judgment",2018,"Action-Aventure","S"],
+    ["Dragon Quest Builders 2",2018,"Bac à sable","SPN"],["Days Gone",2019,"Monde ouvert","SP"],["Kingdom Hearts III",2019,"RPG","SX"],
+    ["Concrete Genie",2019,"Aventure","S"],["Persona 5 Royal",2019,"RPG","S"],["Nioh 2",2020,"Action-Aventure","SP"],["Dreams",2020,"Bac à sable","S"],
+    ["Marvel's Spider-Man: Miles Morales",2020,"Monde ouvert","SP"],["Sackboy: A Big Adventure",2020,"Plateforme","SP"],["Astro's Playroom",2020,"Plateforme","S"],
+    ["Demon's Souls (remake)",2020,"RPG","S"],["Dragon Ball Z: Kakarot",2020,"RPG","PSX"],["Resident Evil 3 (remake)",2020,"Horreur","PSX"],
+    ["Returnal",2021,"Roguelike","SP"],["Ratchet & Clank: Rift Apart",2021,"Plateforme","SP"],["NieR Replicant",2021,"RPG","PSX"],
+    ["Final Fantasy XVI",2023,"RPG","SP"],["Horizon Call of the Mountain",2023,"Aventure","S"],["Rise of the Ronin",2024,"Action-Aventure","S"],
+    ["Stellar Blade",2024,"Action-Aventure","SP"],["Death Stranding 2: On the Beach",2025,"Action-Aventure","S"],["Ghost of Yōtei",2025,"Monde ouvert","S"],
+    ["Ice Climber",1985,"Plateforme","N"],["Kid Icarus",1986,"Action-Aventure","N"],["Punch-Out!!",1987,"Sport","N"],["Contra",1987,"Tir","N"],
+    ["Zelda II: The Adventure of Link",1987,"Action-Aventure","N"],["Dragon Quest III",1988,"RPG","N"],["Super Mario Bros. 2",1988,"Plateforme","N"],
+    ["Ninja Gaiden (NES)",1988,"Action-Aventure","N"],["DuckTales",1989,"Plateforme","N"],["Super Mario Land",1989,"Plateforme","N"],
+    ["Dr. Mario",1990,"Puzzle","N"],["Battletoads",1991,"Action-Aventure","N"],["Metroid II: Return of Samus",1991,"Action-Aventure","N"],
+    ["Kirby's Dream Land",1992,"Plateforme","N"],["Star Fox",1993,"Tir","N"],["Mega Man X",1993,"Plateforme","N"],
+    ["The Legend of Zelda: Link's Awakening",1993,"Action-Aventure","N"],["Donkey Kong Country",1994,"Plateforme","N"],
+    ["Yoshi's Island",1995,"Plateforme","N"],["Kirby Super Star",1996,"Plateforme","N"],["Star Fox 64",1997,"Tir","N"],
+    ["Pokémon Jaune",1998,"RPG","N"],["Paper Mario",2000,"RPG","N"],["Perfect Dark",2000,"Tir","N"],["Banjo-Tooie",2000,"Plateforme","N"],
+    ["Pikmin",2001,"Stratégie","N"],["Luigi's Mansion",2001,"Action-Aventure","N"],["Animal Crossing (GameCube)",2001,"Simulation","N"],
+    ["Advance Wars",2001,"Stratégie","N"],["Golden Sun",2001,"RPG","N"],["Conker's Bad Fur Day",2001,"Plateforme","N"],
+    ["The Legend of Zelda: The Wind Waker",2002,"Action-Aventure","N"],["Metroid Fusion",2002,"Action-Aventure","N"],
+    ["Fire Emblem: The Blazing Blade",2003,"Stratégie","N"],["WarioWare, Inc.: Mega Microgame$!",2003,"Party game","N"],
+    ["Mario Kart: Double Dash!!",2003,"Course","N"],["Mario & Luigi: Superstar Saga",2003,"RPG","N"],
+    ["Paper Mario: The Thousand-Year Door",2004,"RPG","N"],["The Legend of Zelda: The Minish Cap",2004,"Action-Aventure","N"],
+    ["Pokémon Émeraude",2004,"RPG","N"],["Metroid: Zero Mission",2004,"Action-Aventure","N"],["Mario Kart DS",2005,"Course","N"],
+    ["Nintendogs",2005,"Simulation","N"],["Brain Training du Dr Kawashima",2005,"Puzzle","N"],["Wii Play",2006,"Party game","N"],
+    ["New Super Mario Bros.",2006,"Plateforme","N"],["Pokémon Diamant et Perle",2006,"RPG","N"],["Wii Fit",2007,"Sport","N"],
+    ["Super Paper Mario",2007,"RPG","N"],["Professor Layton et l'Étrange Village",2007,"Puzzle","N"],
+    ["The Legend of Zelda: Phantom Hourglass",2007,"Action-Aventure","N"],["Wii Sports Resort",2009,"Sport","N"],
+    ["The Legend of Zelda: Spirit Tracks",2009,"Action-Aventure","N"],["Pokémon HeartGold et SoulSilver",2009,"RPG","N"],
+    ["Super Mario Galaxy 2",2010,"Plateforme","N"],["Pokémon Noir et Blanc",2010,"RPG","N"],["Kirby's Epic Yarn",2010,"Plateforme","N"],
+    ["Donkey Kong Country Returns",2010,"Plateforme","N"],["Kid Icarus: Uprising",2012,"Action-Aventure","N"],
+    ["Fire Emblem Awakening",2012,"Stratégie","N"],["Animal Crossing: New Leaf",2012,"Simulation","N"],["New Super Mario Bros. U",2012,"Plateforme","N"],
+    ["Pikmin 3",2013,"Stratégie","N"],["Luigi's Mansion: Dark Moon",2013,"Action-Aventure","N"],
+    ["The Legend of Zelda: A Link Between Worlds",2013,"Action-Aventure","N"],["Tomodachi Life",2013,"Simulation","N"],
+    ["Pokémon Rubis Oméga et Saphir Alpha",2014,"RPG","N"],["Bayonetta 2",2014,"Action-Aventure","N"],["Hyrule Warriors",2014,"Action-Aventure","N"],
+    ["Xenoblade Chronicles X",2015,"RPG","N"],["Pokkén Tournament",2015,"Combat","N"],["Mario + Rabbids Kingdom Battle",2017,"Stratégie","N"],
+    ["Xenoblade Chronicles 2",2017,"RPG","N"],["ARMS",2017,"Combat","N"],["Pokémon Let's Go, Pikachu !",2018,"RPG","N"],
+    ["The Legend of Zelda: Link's Awakening (remake)",2019,"Action-Aventure","N"],["Astral Chain",2019,"Action-Aventure","N"],
+    ["Super Mario Maker 2",2019,"Plateforme","N"],["Yoshi's Crafted World",2019,"Plateforme","N"],["Ring Fit Adventure",2019,"Sport","N"],
+    ["Cadence of Hyrule",2019,"Rythme","N"],["Hyrule Warriors: L'Ère du fléau",2020,"Action-Aventure","N"],["Mario Party Superstars",2021,"Party game","N"],
+    ["Pokémon Légendes : Arceus",2022,"RPG","N"],["Splatoon 3",2022,"Tir","N"],["Xenoblade Chronicles 3",2022,"RPG","N"],
+    ["Kirby et le monde oublié",2022,"Plateforme","N"],["Bayonetta 3",2022,"Action-Aventure","N"],["Nintendo Switch Sports",2022,"Sport","N"],
+    ["Triangle Strategy",2022,"Stratégie","NPSX"],["Fire Emblem Engage",2023,"Stratégie","N"],["Pikmin 4",2023,"Stratégie","N"],
+    ["Super Mario Party Jamboree",2024,"Party game","N"],["The Legend of Zelda: Echoes of Wisdom",2024,"Action-Aventure","N"],
+    ["Pokémon Légendes : Z-A",2025,"RPG","N"],
+    ["Project Gotham Racing",2001,"Course","X"],["Dead or Alive 3",2001,"Combat","X"],["MechAssault",2002,"Action-Aventure","X"],
+    ["Panzer Dragoon Orta",2002,"Tir","X"],["Age of Mythology",2002,"Stratégie","P"],["Phantom Dust",2004,"Stratégie","X"],
+    ["Jade Empire",2005,"RPG","XP"],["Perfect Dark Zero",2005,"Tir","X"],["Geometry Wars: Retro Evolved",2005,"Arcade","XPS"],
+    ["Age of Empires III",2005,"Stratégie","P"],["Dead Rising",2006,"Action-Aventure","XPS"],["Viva Piñata",2006,"Simulation","X"],
+    ["Lost Planet: Extreme Condition",2006,"Tir","XPS"],["Crackdown",2007,"Action-Aventure","X"],["Lost Odyssey",2007,"RPG","X"],
+    ["Blue Dragon",2007,"RPG","X"],["Gears of War 2",2008,"Tir","X"],["Fable II",2008,"RPG","X"],["Castle Crashers",2008,"Action-Aventure","XPSN"],
+    ["Halo 3: ODST",2009,"Tir","X"],["Halo Wars",2009,"Stratégie","X"],["Shadow Complex",2009,"Action-Aventure","XPS"],["Trials HD",2009,"Course","XP"],
+    ["Halo: Reach",2010,"Tir","X"],["Alan Wake",2010,"Action-Aventure","XP"],["Fable III",2010,"RPG","XP"],["Gears of War 3",2011,"Tir","X"],
+    ["Bastion",2011,"Action-Aventure","PSXN"],["Halo 4",2012,"Tir","X"],["Forza Horizon",2012,"Course","X"],["Spelunky",2012,"Plateforme","PSXM"],
+    ["State of Decay",2013,"Survie","XP"],["Killer Instinct",2013,"Combat","XP"],["Forza Horizon 2",2014,"Course","X"],
+    ["Sunset Overdrive",2014,"Action-Aventure","X"],["Halo 5: Guardians",2015,"Tir","X"],["Forza Horizon 3",2016,"Course","XP"],
+    ["Quantum Break",2016,"Action-Aventure","XP"],["Forza Motorsport 7",2017,"Course","XP"],["Sea of Thieves",2018,"Aventure","PXS"],
+    ["State of Decay 2",2018,"Survie","XP"],["Gears 5",2019,"Tir","XP"],["Ori and the Will of the Wisps",2020,"Plateforme","PXN"],
+    ["Grounded",2020,"Survie","PXSN"],["Age of Empires IV",2021,"Stratégie","P"],["Psychonauts 2",2021,"Plateforme","PSX"],
+    ["Mass Effect Legendary Edition",2021,"RPG","PSX"],["Pentiment",2022,"Aventure","PSXN"],["Forza Motorsport",2023,"Course","XP"],
+    ["Hellblade II: Senua's Saga",2024,"Action-Aventure","PXS"],["Indiana Jones et le Cercle ancien",2024,"Action-Aventure","PSX"],
+    ["Avowed",2025,"RPG","PX"],["South of Midnight",2025,"Action-Aventure","PX"]
+  ];
+
+  function slug(s) { return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function hue(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; }
+  function ini(t) {
+    var w = t.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).filter(Boolean);
+    if (!w.length) return "?";
+    return (w[0][0] + (w[1] ? w[1][0] : "")).toUpperCase();
+  }
+
+  var OWN = [["", "Non précisé"], ["owned", "Possédé"], ["wanted", "Souhaité"], ["lent", "Prêté"]];
+  var SERIES = [
+    ["Mario", /mario/i], ["Zelda", /zelda/i], ["Pokémon", /pokémon/i], ["Final Fantasy", /final fantasy|dissidia/i],
+    ["Resident Evil", /resident evil/i], ["Call of Duty", /call of duty/i], ["Assassin's Creed", /assassin/i],
+    ["God of War", /god of war/i], ["Grand Theft Auto", /grand theft auto/i], ["Fallout", /^fallout/i],
+    ["The Elder Scrolls", /elder scrolls/i], ["FromSoftware (Souls)", /souls|bloodborne|elden ring|sekiro/i],
+    ["Metal Gear", /metal gear/i], ["Persona", /^persona/i], ["Tekken", /^tekken/i], ["Street Fighter", /street fighter/i],
+    ["Gran Turismo", /gran turismo/i], ["Mass Effect", /mass effect/i], ["Halo", /^halo/i], ["Crash Bandicoot", /crash/i],
+    ["Spyro", /spyro/i], ["Ratchet & Clank", /ratchet/i], ["Uncharted", /uncharted/i], ["Silent Hill", /silent hill/i],
+    ["Tomb Raider", /tomb raider/i], ["Sonic", /^sonic/i], ["Metroid", /metroid/i], ["Castlevania", /castlevania/i],
+    ["Diablo", /^diablo/i], ["StarCraft", /starcraft/i], ["Warcraft", /warcraft/i], ["Civilization", /^civilization/i],
+    ["Half-Life", /half-life/i], ["Portal", /^portal/i], ["Doom", /^doom/i], ["Quake", /^quake/i], ["Far Cry", /far cry/i],
+    ["Hitman", /hitman/i], ["Kingdom Hearts", /kingdom hearts/i], ["Yakuza", /yakuza|^judgment/i], ["Monster Hunter", /monster hunter/i],
+    ["Smash Bros.", /smash bros/i], ["Splatoon", /splatoon/i], ["Animal Crossing", /animal crossing/i], ["Mortal Kombat", /mortal kombat/i],
+    ["Dragon Quest", /dragon quest/i], ["Fire Emblem", /fire emblem/i], ["Divinity", /^divinity/i], ["The Witcher", /witcher/i],
+    ["BioShock", /bioshock/i], ["Borderlands", /borderlands/i], ["Battlefield", /battlefield/i], ["Burnout", /burnout/i],
+    ["Jak and Daxter", /^jak/i], ["Sly Cooper", /^sly/i], ["Killzone", /killzone/i], ["Infamous", /infamous/i], ["Resistance", /^resistance/i],
+    ["Guitar Hero", /guitar hero/i], ["Left 4 Dead", /left 4 dead/i], ["Dead Space", /dead space/i], ["Wolfenstein", /wolfenstein/i],
+    ["Max Payne", /max payne/i], ["Prince of Persia", /prince of persia/i], ["Splinter Cell", /splinter cell/i],
+    ["Spider-Man", /spider-man/i], ["Horizon", /^horizon/i], ["Forza", /forza/i], ["The Last of Us", /last of us/i],
+    ["Death Stranding", /death stranding/i], ["Pac-Man", /pac-man/i], ["Mega Man", /mega man/i], ["Dragon Age", /dragon age/i],
+    ["Donkey Kong", /donkey kong/i], ["Tony Hawk", /tony hawk/i], ["Hollow Knight", /hollow knight/i], ["Kingdom Come", /kingdom come/i],
+    ["Pro Evolution Soccer", /pro evolution/i]
+  ];
+  function serieOf(t) { for (var i = 0; i < SERIES.length; i++) if (SERIES[i][1].test(t)) return SERIES[i][0]; return ""; }
+
+  var S = { v: 1, u: {}, custom: [], cols: [], th: "" };
+  var F = { q: "", genre: "", plat: "", status: "", serie: "", decade: "", col: "", own: "", fav: false, sort: "title", view: "grid" };
+  var $ = function (id) { return document.getElementById(id); };
+
+  var BASE = null;
+  function allGames() {
+    if (!BASE) BASE = CAT.map(function (r) { return { id: slug(r[0]) + "-" + r[1], t: r[0], y: r[1], g: r[2], p: r[3], s: serieOf(r[0]), custom: false }; });
+    var extra = (S.custom || []).map(function (c) { return { id: c.id, t: c.t, y: c.y || 0, g: c.g, p: c.p || "", s: serieOf(c.t), custom: true }; });
+    return BASE.concat(extra);
+  }
+  function gameById(id) { var a = allGames(); for (var i = 0; i < a.length; i++) if (a[i].id === id) return a[i]; return null; }
+  function platNames(g) { return g.p.split("").map(function (c) { return PLAT[c]; }).join(", "); }
+  function ownLabel(v) { for (var i = 0; i < OWN.length; i++) if (OWN[i][0] === v) return OWN[i][1]; return ""; }
+  function colName(id) { for (var i = 0; i < S.cols.length; i++) if (S.cols[i].id === id) return S.cols[i].n; return ""; }
+
+  /* ---------- persistance ---------- */
+  var dbDoc = null, saving = false, pending = false, timer = null;
+  function loadLocal() { try { var r = localStorage.getItem("ludotheque-v1"); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+  function saveLocal() { try { localStorage.setItem("ludotheque-v1", JSON.stringify(S)); } catch (e) {} }
+  function normalize(d) { d = d || {}; return { v: 1, u: d.u || {}, custom: d.custom || [], cols: d.cols || [], th: d.th || "" }; }
+  function hasData() { return Object.keys(S.u).length > 0 || S.custom.length > 0 || S.cols.length > 0; }
+  function note(msg) { $("saveNote").textContent = msg; }
+  function noteIdle() { note(dbDoc ? "Votre liste est enregistrée sur votre compte." : "Votre liste est enregistrée sur cet appareil."); }
+  function touch() { saveLocal(); clearTimeout(timer); timer = setTimeout(flush, 500); }
+  function flush() {
+    if (!dbDoc) { noteIdle(); return; }
+    if (saving) { pending = true; return; }
+    saving = true;
+    dbDoc.set(S).then(function () { noteIdle(); }, function () { dbDoc = null; noteIdle(); }).then(function () {
+      saving = false;
+      if (pending) { pending = false; flush(); }
+    });
+  }
+
+  /* ---------- thème ---------- */
+  var themeTouched = false;
+  function applyTheme() {
+    var r = document.documentElement;
+    if (S.th) { r.setAttribute("data-theme", S.th); themeTouched = true; }
+    else if (themeTouched) r.removeAttribute("data-theme");
+    $("themeBtn").textContent = "Thème : " + ({ "": "auto", light: "clair", dark: "sombre" })[S.th || ""];
+  }
+
+  /* ---------- données par jeu ---------- */
+  function entry(id) { if (!S.u[id]) S.u[id] = {}; return S.u[id]; }
+  function isEmpty(e) { return !e.s && !e.f && !e.r && !e.h && !e.d1 && !e.d2 && !e.n && !e.o && !(e.c && e.c.length); }
+  function clean(id) { var e = S.u[id]; if (e && isEmpty(e)) delete S.u[id]; }
+
+  /* ---------- filtres ---------- */
+  var ORDER = { play: 0, wish: 1, done: 2, drop: 3, "": 4 };
+  function filtered() {
+    var q = F.q.trim().toLowerCase();
+    var list = allGames().filter(function (g) {
+      var u = S.u[g.id] || {};
+      if (F.genre && g.g !== F.genre) return false;
+      if (F.plat && g.p.indexOf(F.plat) < 0) return false;
+      if (F.status && (u.s || "") !== (F.status === "none" ? "" : F.status)) return false;
+      if (F.serie && g.s !== F.serie) return false;
+      if (F.decade && (!g.y || Math.floor(g.y / 10) * 10 !== parseInt(F.decade, 10))) return false;
+      if (F.col && !(u.c && u.c.indexOf(F.col) >= 0)) return false;
+      if (F.own && (u.o || "") !== (F.own === "none" ? "" : F.own)) return false;
+      if (F.fav && !u.f) return false;
+      if (q) {
+        var hay = (g.t + " " + g.g + " " + g.s + " " + platNames(g) + " " + g.y).toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
+      }
+      return true;
+    });
+    list.sort(function (a, b) {
+      var ua = S.u[a.id] || {}, ub = S.u[b.id] || {};
+      switch (F.sort) {
+        case "year-desc": return b.y - a.y || a.t.localeCompare(b.t, "fr");
+        case "year-asc": return a.y - b.y || a.t.localeCompare(b.t, "fr");
+        case "rating": return (ub.r || 0) - (ua.r || 0) || a.t.localeCompare(b.t, "fr");
+        case "hours": return (ub.h || 0) - (ua.h || 0) || a.t.localeCompare(b.t, "fr");
+        case "status": return ORDER[ua.s || ""] - ORDER[ub.s || ""] || a.t.localeCompare(b.t, "fr");
+        case "fav": return (ub.f ? 1 : 0) - (ua.f ? 1 : 0) || a.t.localeCompare(b.t, "fr");
+        default: return a.t.localeCompare(b.t, "fr");
+      }
+    });
+    return list;
+  }
+
+  function card(g) {
+    var u = S.u[g.id] || {}, st = u.s || "", r = u.r || 0;
+    var plats = g.p.split("").map(function (c) { return '<span class="plat">' + PLAT[c] + "</span>"; }).join("");
+    var opts = STATUS.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === st ? " selected" : "") + ">" + s[1] + "</option>"; }).join("");
+    var stars = "";
+    for (var i = 1; i <= 5; i++) stars += '<button type="button" class="' + (i <= r ? "on" : "") + '" data-act="rate" data-id="' + g.id + '" data-v="' + i + '" aria-label="Note ' + i + ' sur 5">★</button>';
+    var tags = [];
+    if (u.o) tags.push(ownLabel(u.o));
+    if (u.h) tags.push(u.h + " h");
+    (u.c || []).forEach(function (id) { var n = colName(id); if (n) tags.push(n); });
+    var tagHtml = tags.length ? '<div class="tags">' + tags.map(function (t) { return '<span class="tag">' + esc(t) + "</span>"; }).join("") + "</div>" : "";
+    return '<article class="card' + (st === "done" ? " is-done" : "") + '">' +
+      '<div class="tile" style="--h:' + hue(g.t) + '" aria-hidden="true">' + esc(ini(g.t)) + "</div>" +
+      '<div class="info"><h3><button type="button" class="titlebtn" data-act="open" data-id="' + g.id + '" title="Ouvrir la fiche">' + esc(g.t) + '</button></h3><p class="meta">' + (g.y ? g.y + " · " : "") + esc(g.g) + "</p>" +
+      '<div class="plats">' + plats + "</div>" + tagHtml +
+      '<div class="ctl"><select data-act="status" data-id="' + g.id + '" aria-label="Statut de ' + esc(g.t) + '">' + opts + '</select><span class="stars" role="group" aria-label="Note">' + stars + "</span></div></div>" +
+      '<div class="side">' +
+      '<button type="button" class="chk" data-act="done" data-id="' + g.id + '" aria-pressed="' + (st === "done") + '" aria-label="Marquer ' + esc(g.t) + ' comme terminé" title="Terminé">✓</button>' +
+      '<button type="button" class="fav" data-act="fav" data-id="' + g.id + '" aria-pressed="' + !!u.f + '" aria-label="Favori : ' + esc(g.t) + '" title="Favori">' + (u.f ? "★" : "☆") + "</button>" +
+      (g.custom ? '<button type="button" class="del" data-act="del" data-id="' + g.id + '" aria-label="Supprimer ' + esc(g.t) + '" title="Supprimer">✕</button>' : "") +
+      "</div></article>";
+  }
+
+  function renderList() {
+    var list = filtered(), total = allGames().length;
+    $("count").textContent = list.length + " jeu" + (list.length > 1 ? "x" : "") + " affiché" + (list.length > 1 ? "s" : "") + " sur " + total;
+    $("list").className = "list" + (F.view === "rows" ? " rows" : "");
+    $("list").innerHTML = list.length ? list.map(card).join("") : '<div class="empty">Aucun jeu ne correspond. Modifiez les filtres ou ajoutez le vôtre avec « + Ajouter un jeu ».</div>';
+  }
+
+  function counts() {
+    var c = { wish: 0, play: 0, done: 0, drop: 0, fav: 0, rated: 0, sum: 0, h: 0 };
+    var ids = {}; allGames().forEach(function (g) { ids[g.id] = 1; });
+    Object.keys(S.u).forEach(function (id) {
+      if (!ids[id]) return;
+      var u = S.u[id];
+      if (u.s) c[u.s]++;
+      if (u.f) c.fav++;
+      if (u.r) { c.rated++; c.sum += u.r; }
+      if (u.h) c.h += u.h;
+    });
+    return c;
+  }
+
+  function renderHeader() {
+    var c = counts(), total = allGames().length;
+    $("sub").textContent = total + " jeux dans le catalogue · " + c.play + " en cours · " + c.fav + " favori" + (c.fav > 1 ? "s" : "");
+    $("pCount").textContent = c.done + " / " + total;
+    $("pBar").style.width = (total ? (c.done / total) * 100 : 0) + "%";
+  }
+
+  /* ---------- statistiques ---------- */
+  function bars(rows) {
+    var max = Math.max.apply(null, rows.map(function (r) { return r.total; }).concat([1]));
+    return rows.map(function (r) {
+      return '<div class="row"><span class="lbl" title="' + esc(r.label) + '">' + esc(r.label) + '</span><div class="track"><i style="width:' + (r.total / max * 100) + '%"><u style="width:' + (r.total ? r.done / r.total * 100 : 0) + '%"></u></i></div><span class="num">' + r.done + "/" + r.total + "</span></div>";
+    }).join("");
+  }
+
+  function goal(name, desc, cur, target) {
+    var shown = Math.min(Math.round(cur * 10) / 10, target), ok = target > 0 && cur >= target;
+    return '<div class="goal' + (ok ? " ok" : "") + '"><span><b>' + (ok ? "✓ " : "") + esc(name) + '</b> <span class="note">' + esc(desc) + '</span></span><span class="note">' + shown + " / " + target + '</span><div class="bar"><i style="width:' + Math.min(100, target ? cur / target * 100 : 0) + '%"></i></div></div>';
+  }
+
+  function summaryText(games, c) {
+    var byTitle = function (a, b) { return a.t.localeCompare(b.t, "fr"); };
+    var lines = ["Ma Marouthèque", c.done + " jeux terminés sur " + games.length, c.play + " en cours, " + c.wish + " à jouer"];
+    if (c.h) lines.push(Math.round(c.h * 10) / 10 + " heures de jeu notées");
+    if (c.rated) lines.push("Note moyenne : " + (c.sum / c.rated).toFixed(1) + "/5");
+    var favs = games.filter(function (g) { return (S.u[g.id] || {}).f; }).sort(byTitle).slice(0, 5).map(function (g) { return g.t; });
+    if (favs.length) lines.push("Favoris : " + favs.join(", "));
+    var best = games.filter(function (g) { return ((S.u[g.id] || {}).r || 0) >= 4; }).sort(function (a, b) { return S.u[b.id].r - S.u[a.id].r || byTitle(a, b); }).slice(0, 5).map(function (g) { return g.t + " (" + S.u[g.id].r + "/5)"; });
+    if (best.length) lines.push("Mieux notés : " + best.join(", "));
+    return lines.join("\n");
+  }
+
+  var CMP = null;
+  function cmpPanel(games) {
+    var html = '<p class="note">Importez le fichier exporté par un ami pour comparer vos jeux terminés. Le fichier reste dans votre navigateur.</p><input type="file" id="cmpFile" accept=".json,application/json">';
+    if (!CMP) return html;
+    var titles = {}; games.forEach(function (g) { titles[g.id] = g.t; });
+    function done(u, id) { return u[id] && u[id].s === "done" && titles[id]; }
+    var both = [], them = [], me = [];
+    Object.keys(titles).forEach(function (id) {
+      var a = done(S.u, id), b = done(CMP.u, id);
+      if (a && b) both.push(titles[id]); else if (b) them.push(titles[id]); else if (a) me.push(titles[id]);
+    });
+    function block(label, arr) {
+      arr.sort(function (x, y) { return x.localeCompare(y, "fr"); });
+      return '<p><b>' + label + " (" + arr.length + ")</b><br><span class=\"note\">" + (arr.length ? esc(arr.slice(0, 12).join(", ")) + (arr.length > 12 ? "…" : "") : "Aucun") + "</span></p>";
+    }
+    return html + '<div class="cmp">' + block("Terminés par vous deux", both) + block("Terminés par votre ami, pas par vous", them) + block("Terminés par vous, pas par votre ami", me) + "</div>";
+  }
+
+  function renderStats() {
+    var games = allGames(), c = counts(), total = games.length;
+    var byG = {}, byD = {}, byP = {}, doneG = {}, doneD = {}, byY = {};
+    games.forEach(function (g) {
+      var u = S.u[g.id] || {}, done = u.s === "done" ? 1 : 0;
+      (byG[g.g] = byG[g.g] || { label: g.g, total: 0, done: 0 }); byG[g.g].total++; byG[g.g].done += done;
+      if (g.y) {
+        var d = Math.floor(g.y / 10) * 10 + "s";
+        (byD[d] = byD[d] || { label: d, total: 0, done: 0 }); byD[d].total++; byD[d].done += done;
+        if (done) doneD[d] = 1;
+      }
+      g.p.split("").forEach(function (p) { (byP[p] = byP[p] || { label: PLAT[p], total: 0, done: 0 }); byP[p].total++; byP[p].done += done; });
+      if (done) doneG[g.g] = (doneG[g.g] || 0) + 1;
+      if (done && u.d2) { var y = u.d2.slice(0, 4); byY[y] = (byY[y] || 0) + 1; }
+    });
+    var gRows = Object.keys(byG).map(function (k) { return byG[k]; }).sort(function (a, b) { return b.total - a.total; });
+    var dRows = Object.keys(byD).map(function (k) { return byD[k]; }).sort(function (a, b) { return a.label.localeCompare(b.label); });
+    var pRows = Object.keys(byP).map(function (k) { return byP[k]; }).sort(function (a, b) { return b.total - a.total; });
+    var yRows = Object.keys(byY).sort().map(function (k) { return { label: k, total: byY[k], done: byY[k] }; });
+
+    var favG = "–", fmax = 0;
+    Object.keys(doneG).forEach(function (k) { if (doneG[k] > fmax) { fmax = doneG[k]; favG = k; } });
+
+    var none = total - c.wish - c.play - c.done - c.drop;
+    var seg = [["done", c.done], ["play", c.play], ["wish", c.wish], ["drop", c.drop], ["", none]];
+    var stack = seg.map(function (s) { return '<i style="width:' + (total ? s[1] / total * 100 : 0) + "%;background:" + STATUS_COLOR[s[0]] + '"></i>'; }).join("");
+    var names = { done: "Terminés", play: "En cours", wish: "À jouer", drop: "Abandonnés", "": "Sans statut" };
+    var legend = seg.map(function (s) { return '<span><i style="background:' + STATUS_COLOR[s[0]] + '"></i>' + names[s[0]] + " " + s[1] + "</span>"; }).join("");
+
+    var rated = games.filter(function (g) { return (S.u[g.id] || {}).r; }).sort(function (a, b) { return S.u[b.id].r - S.u[a.id].r || a.t.localeCompare(b.t, "fr"); }).slice(0, 8);
+    var favs = games.filter(function (g) { return (S.u[g.id] || {}).f; }).sort(function (a, b) { return a.t.localeCompare(b.t, "fr"); }).slice(0, 8);
+    function li(g, right) { return "<li><span>" + esc(g.t) + '</span><span class="note">' + right + "</span></li>"; }
+
+    var goals =
+      goal("Premier pas", "Terminer 1 jeu", c.done, 1) +
+      goal("Dix de der", "Terminer 10 jeux", c.done, 10) +
+      goal("Joueur assidu", "Terminer 25 jeux", c.done, 25) +
+      goal("Demi-centenaire", "Terminer 50 jeux", c.done, 50) +
+      goal("Centenaire", "Terminer 100 jeux", c.done, 100) +
+      goal("Fan de RPG", "Terminer 10 RPG", doneG["RPG"] || 0, 10) +
+      goal("Un jeu par décennie", "Au moins un jeu terminé dans chaque décennie", Object.keys(doneD).length, dRows.length) +
+      goal("Touche-à-tout", "Terminer des jeux dans 8 genres", Object.keys(doneG).length, 8) +
+      goal("Coup de cœur", "Mettre 5 jeux en favoris", c.fav, 5) +
+      goal("Critique", "Noter 10 jeux", c.rated, 10) +
+      goal("Organisé", "Créer 3 collections", S.cols.length, 3) +
+      goal("Marathonien", "Cumuler 100 heures de jeu", c.h, 100);
+
+    var summary = summaryText(games, c);
+
+    $("viewStats").innerHTML =
+      '<div class="kpis">' +
+      '<div class="kpi"><span>Terminés</span><b>' + c.done + "</b></div>" +
+      '<div class="kpi"><span>En cours</span><b>' + c.play + "</b></div>" +
+      '<div class="kpi"><span>À jouer</span><b>' + c.wish + "</b></div>" +
+      '<div class="kpi"><span>Favoris</span><b>' + c.fav + "</b></div>" +
+      '<div class="kpi"><span>Note moyenne</span><b>' + (c.rated ? (c.sum / c.rated).toFixed(1) : "–") + "</b></div>" +
+      '<div class="kpi"><span>Heures de jeu</span><b>' + (Math.round(c.h * 10) / 10) + "</b></div>" +
+      '<div class="kpi"><span>Genre préféré</span><b class="small">' + esc(favG) + "</b></div></div>" +
+      '<div class="panels">' +
+      '<div class="panel"><h2>Répartition par statut</h2><div class="stack">' + stack + '</div><div class="legend">' + legend + "</div></div>" +
+      '<div class="panel"><h2>Défis et badges</h2>' + goals + "</div>" +
+      '<div class="panel"><h2>Mes mieux notés</h2>' + (rated.length ? '<ul class="top">' + rated.map(function (g) { return li(g, "★".repeat(S.u[g.id].r)); }).join("") + "</ul>" : '<p class="note">Attribuez des étoiles aux jeux pour les voir ici.</p>') + "</div>" +
+      '<div class="panel"><h2>Mes favoris</h2>' + (favs.length ? '<ul class="top">' + favs.map(function (g) { return li(g, g.y || ""); }).join("") + "</ul>" : '<p class="note">Cliquez sur l’étoile d’un jeu pour l’ajouter ici.</p>') + "</div>" +
+      '<div class="panel"><h2>Terminés par année</h2>' + (yRows.length ? bars(yRows) : '<p class="note">Cliquez sur le titre d’un jeu et renseignez sa date de fin pour alimenter ce graphique.</p>') + "</div>" +
+      '<div class="panel"><h2>Par genre</h2>' + bars(gRows) + '<p class="note">Partie colorée : jeux terminés.</p></div>' +
+      '<div class="panel"><h2>Par décennie</h2>' + bars(dRows) + "</div>" +
+      '<div class="panel"><h2>Par plateforme</h2>' + bars(pRows) + "</div>" +
+      '<div class="panel"><h2>Comparer avec un ami</h2>' + cmpPanel(games) + "</div>" +
+      '<div class="panel"><h2>Mon résumé à partager</h2><pre class="summary" id="sumText">' + esc(summary) + '</pre><button class="btn" type="button" data-act="copy">Copier le résumé</button></div></div>';
+  }
+
+  function render() { renderHeader(); renderList(); if (!$("viewStats").hidden) renderStats(); }
+  var rt = null;
+  function renderSoon() { clearTimeout(rt); rt = setTimeout(render, 250); }
+
+  /* ---------- fiche d'un jeu ---------- */
+  var openId = null;
+  function renderModalCols() {
+    var c = (S.u[openId] || {}).c || [];
+    $("mCols").innerHTML = S.cols.length ? S.cols.map(function (k) {
+      return '<span class="colitem"><label><input type="checkbox" data-col="' + k.id + '"' + (c.indexOf(k.id) >= 0 ? " checked" : "") + "> " + esc(k.n) + '</label><button type="button" class="del mini" data-delcol="' + k.id + '" aria-label="Supprimer la collection ' + esc(k.n) + '">✕</button></span>';
+    }).join("") : '<span class="note">Aucune collection. Créez-en une ci-dessous.</span>';
+  }
+  function renderMates(g) {
+    var mates = g.s ? allGames().filter(function (x) { return x.s === g.s && x.id !== g.id; }).sort(function (a, b) { return a.y - b.y; }).slice(0, 14) : [];
+    $("mMatesWrap").hidden = !mates.length;
+    $("mMates").innerHTML = mates.map(function (x) { return '<button type="button" class="btn" data-mate="' + x.id + '">' + esc(x.t) + "</button>"; }).join("");
+    $("mSerieName").textContent = g.s ? "Même série : " + g.s : "";
+  }
+  function openModal(id) {
+    var g = gameById(id); if (!g) return;
+    openId = id; var u = S.u[id] || {};
+    $("mTitle").textContent = g.t;
+    $("mMeta").textContent = (g.y ? g.y + " · " : "") + g.g + " · " + platNames(g);
+    $("mOwn").value = u.o || ""; $("mHours").value = u.h || ""; $("mD1").value = u.d1 || ""; $("mD2").value = u.d2 || ""; $("mNote").value = u.n || "";
+    renderModalCols(); renderMates(g);
+    $("modal").hidden = false; $("mClose").focus();
+  }
+  function closeModal() { $("modal").hidden = true; openId = null; render(); }
+  function saveField(k, v) {
+    if (!openId) return;
+    var u = entry(openId);
+    if (v === "" || v == null) delete u[k]; else u[k] = v;
+    clean(openId); touch(); renderSoon();
+  }
+  function refreshFilters() {
+    var games = allGames(), counts = {};
+    games.forEach(function (g) { if (g.s) counts[g.s] = (counts[g.s] || 0) + 1; });
+    var series = Object.keys(counts).filter(function (k) { return counts[k] >= 2; }).sort(function (a, b) { return a.localeCompare(b, "fr"); });
+    var decs = {}; games.forEach(function (g) { if (g.y) decs[Math.floor(g.y / 10) * 10] = 1; });
+    keep($("fSerie"), "Toutes les séries", series.map(function (s) { return [s, s]; }), "serie");
+    keep($("fDecade"), "Toutes les décennies", Object.keys(decs).sort().map(function (d) { return [d, d + "s"]; }), "decade");
+    keep($("fCol"), "Toutes les collections", S.cols.map(function (k) { return [k.id, k.n]; }), "col");
+  }
+  function keep(sel, first, items, key) {
+    var cur = sel.value;
+    fill(sel, first, items);
+    sel.value = items.some(function (i) { return String(i[0]) === cur; }) ? cur : "";
+    F[key] = sel.value;
+  }
+
+  /* ---------- événements : liste ---------- */
+  $("list").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]"); if (!b || b.tagName === "SELECT") return;
+    var act = b.getAttribute("data-act"), id = b.getAttribute("data-id"), u;
+    if (act === "open") { openModal(id); return; }
+    if (act === "done") { u = entry(id); u.s = u.s === "done" ? "" : "done"; if (!u.s) delete u.s; clean(id); }
+    else if (act === "fav") { u = entry(id); u.f = u.f ? 0 : 1; if (!u.f) delete u.f; clean(id); }
+    else if (act === "rate") { u = entry(id); var v = parseInt(b.getAttribute("data-v"), 10); u.r = u.r === v ? 0 : v; if (!u.r) delete u.r; clean(id); }
+    else if (act === "del") { S.custom = S.custom.filter(function (c) { return c.id !== id; }); delete S.u[id]; refreshFilters(); }
+    touch(); render();
+  });
+  $("list").addEventListener("change", function (e) {
+    var s = e.target.closest("select[data-act='status']"); if (!s) return;
+    var id = s.getAttribute("data-id"), u = entry(id); u.s = s.value; if (!u.s) delete u.s; clean(id); touch(); render();
+  });
+
+  function fill(sel, first, items) {
+    sel.innerHTML = '<option value="">' + first + "</option>" + items.map(function (i) { return '<option value="' + esc(i[0]) + '">' + esc(i[1]) + "</option>"; }).join("");
+  }
+  fill($("fGenre"), "Tous les genres", GENRES.map(function (g) { return [g, g]; }));
+  fill($("fPlat"), "Toutes plateformes", Object.keys(PLAT).map(function (k) { return [k, PLAT[k]]; }));
+  fill($("fStatus"), "Tous les statuts", [["wish", "À jouer"], ["play", "En cours"], ["done", "Terminé"], ["drop", "Abandonné"], ["none", "Sans statut"]]);
+  fill($("fOwn"), "Toute possession", [["owned", "Possédé"], ["wanted", "Souhaité"], ["lent", "Prêté"], ["none", "Non précisé"]]);
+  $("fSort").innerHTML = [["title", "Tri : titre A–Z"], ["year-desc", "Tri : plus récents"], ["year-asc", "Tri : plus anciens"], ["rating", "Tri : mieux notés"], ["hours", "Tri : temps de jeu"], ["status", "Tri : statut"], ["fav", "Tri : favoris d’abord"]]
+    .map(function (o) { return '<option value="' + o[0] + '">' + o[1] + "</option>"; }).join("");
+  $("aGenre").innerHTML = GENRES.map(function (g) { return "<option>" + g + "</option>"; }).join("");
+  $("aPlat").innerHTML = Object.keys(PLAT).map(function (k) { return '<option value="' + k + '">' + PLAT[k] + "</option>"; }).join("");
+  $("mOwn").innerHTML = OWN.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + "</option>"; }).join("");
+
+  var qt = null;
+  $("q").addEventListener("input", function () { clearTimeout(qt); qt = setTimeout(function () { F.q = $("q").value; renderList(); }, 120); });
+  var FILTERS = { fGenre: "genre", fPlat: "plat", fStatus: "status", fSerie: "serie", fDecade: "decade", fCol: "col", fOwn: "own", fSort: "sort" };
+  Object.keys(FILTERS).forEach(function (id) { $(id).addEventListener("change", function () { F[FILTERS[id]] = this.value; renderList(); }); });
+  $("fFav").addEventListener("click", function () { F.fav = !F.fav; this.setAttribute("aria-pressed", F.fav); renderList(); });
+  $("vGrid").addEventListener("click", function () { F.view = "grid"; this.setAttribute("aria-pressed", "true"); $("vRows").setAttribute("aria-pressed", "false"); renderList(); });
+  $("vRows").addEventListener("click", function () { F.view = "rows"; this.setAttribute("aria-pressed", "true"); $("vGrid").setAttribute("aria-pressed", "false"); renderList(); });
+
+  $("addToggle").addEventListener("click", function () {
+    var open = $("addForm").hidden; $("addForm").hidden = !open; this.setAttribute("aria-expanded", open);
+    if (open) $("aTitle").focus();
+  });
+  $("addForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = $("aTitle").value.trim(); if (!t) return;
+    var y = parseInt($("aYear").value, 10);
+    S.custom.push({ id: "x" + Date.now().toString(36), t: t, y: isNaN(y) ? 0 : y, g: $("aGenre").value, p: $("aPlat").value });
+    $("aTitle").value = ""; $("aYear").value = "";
+    touch(); refreshFilters(); render();
+  });
+
+  /* ---------- événements : fiche ---------- */
+  $("mClose").addEventListener("click", closeModal);
+  $("modal").addEventListener("click", function (e) { if (e.target === $("modal")) closeModal(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("modal").hidden) closeModal(); });
+  $("mOwn").addEventListener("change", function () { saveField("o", this.value); });
+  $("mHours").addEventListener("input", function () { var n = parseFloat(this.value); saveField("h", isNaN(n) || n <= 0 ? "" : Math.round(n * 2) / 2); });
+  $("mD1").addEventListener("change", function () { saveField("d1", this.value); });
+  $("mD2").addEventListener("change", function () { saveField("d2", this.value); });
+  $("mNote").addEventListener("input", function () { saveField("n", this.value.trim() ? this.value : ""); });
+  $("mCols").addEventListener("change", function (e) {
+    var cb = e.target.closest("input[data-col]"); if (!cb || !openId) return;
+    var u = entry(openId), id = cb.getAttribute("data-col"); u.c = u.c || [];
+    var i = u.c.indexOf(id);
+    if (cb.checked && i < 0) u.c.push(id);
+    if (!cb.checked && i >= 0) u.c.splice(i, 1);
+    if (!u.c.length) delete u.c;
+    clean(openId); touch(); renderSoon();
+  });
+  $("mCols").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-delcol]"); if (!b) return;
+    var id = b.getAttribute("data-delcol");
+    S.cols = S.cols.filter(function (k) { return k.id !== id; });
+    Object.keys(S.u).forEach(function (gid) {
+      var u = S.u[gid]; if (!u.c) return;
+      u.c = u.c.filter(function (x) { return x !== id; }); if (!u.c.length) delete u.c; clean(gid);
+    });
+    touch(); refreshFilters(); renderModalCols(); renderSoon();
+  });
+  function addCol() {
+    var n = $("mNewCol").value.trim(); if (!n || !openId) return;
+    var id = "c" + Date.now().toString(36);
+    S.cols.push({ id: id, n: n.slice(0, 40) });
+    var u = entry(openId); u.c = (u.c || []).concat(id);
+    $("mNewCol").value = "";
+    touch(); refreshFilters(); renderModalCols(); renderSoon();
+  }
+  $("mAddCol").addEventListener("click", addCol);
+  $("mNewCol").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addCol(); } });
+  $("mMates").addEventListener("click", function (e) { var b = e.target.closest("[data-mate]"); if (b) openModal(b.getAttribute("data-mate")); });
+
+  /* ---------- actions : thème, surprise, export, import ---------- */
+  $("themeBtn").addEventListener("click", function () {
+    var order = ["", "light", "dark"]; S.th = order[(order.indexOf(S.th || "") + 1) % 3];
+    applyTheme(); touch();
+  });
+
+  $("surpriseBtn").addEventListener("click", function () {
+    var games = allGames();
+    var pool = games.filter(function (g) { return (S.u[g.id] || {}).s === "wish"; }), from = "votre liste « À jouer »";
+    if (!pool.length) { pool = games.filter(function (g) { return !(S.u[g.id] || {}).s; }); from = "les jeux sans statut"; }
+    if (!pool.length) { note("Tous vos jeux ont déjà un statut."); return; }
+    var pick = pool[Math.floor(Math.random() * pool.length)];
+    note("Suggestion tirée parmi " + from + ".");
+    openModal(pick.id);
+  });
+
+  function anchorDownload(filename, text) {
+    try {
+      var url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+      var a = document.createElement("a"); a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    } catch (e) { note("L’export n’est pas disponible ici."); }
+  }
+  $("exportBtn").addEventListener("click", function () {
+    var text = JSON.stringify({ app: "marouthèque", exportedAt: new Date().toISOString(), data: S }, null, 2);
+    var filename = "maroutheque-" + new Date().toISOString().slice(0, 10) + ".json";
+    var via = window.claude && claude.use ? claude.use("downloads") : Promise.resolve(null);
+    via.then(function (d) {
+      if (d) return d.save({ filename: filename, data: text }).then(function () { note("Export enregistré."); });
+      anchorDownload(filename, text);
+    }).catch(function (err) { if (!err || err.code !== "declined") anchorDownload(filename, text); });
+  });
+
+  function parseBackup(text) {
+    var o = JSON.parse(text), d = o && o.data ? o.data : o;
+    if (!d || typeof d !== "object" || !d.u || typeof d.u !== "object") throw new Error("format");
+    return normalize(d);
+  }
+  function readBackup(file, cb) {
+    var r = new FileReader();
+    r.onload = function () { try { cb(null, parseBackup(String(r.result))); } catch (e) { cb(e); } };
+    r.onerror = function () { cb(new Error("lecture")); };
+    r.readAsText(file);
+  }
+  function mergeInto(base, imp) {
+    Object.keys(imp.u).forEach(function (id) {
+      var a = base.u[id], b = imp.u[id];
+      if (!a) { base.u[id] = b; return; }
+      Object.keys(b).forEach(function (k) {
+        if (k === "c") { var have = a.c || []; a.c = have.concat((b.c || []).filter(function (x) { return have.indexOf(x) < 0; })); }
+        else if (!a[k]) a[k] = b[k];
+      });
+    });
+    imp.custom.forEach(function (c) { if (!base.custom.some(function (x) { return x.id === c.id; })) base.custom.push(c); });
+    imp.cols.forEach(function (c) { if (!base.cols.some(function (x) { return x.id === c.id; })) base.cols.push(c); });
+  }
+  var pendingImp = null;
+  function endImport() { pendingImp = null; $("impBar").hidden = true; }
+  function afterImport() { touch(); applyTheme(); refreshFilters(); render(); endImport(); }
+  $("importBtn").addEventListener("click", function () { $("impFile").click(); });
+  $("impFile").addEventListener("change", function () {
+    var f = this.files && this.files[0], input = this; if (!f) return;
+    readBackup(f, function (err, imp) {
+      input.value = "";
+      if (err) { note("Ce fichier n’est pas un export valide de la Marouthèque."); return; }
+      pendingImp = imp;
+      $("impMsg").textContent = "Fichier lu : " + Object.keys(imp.u).length + " jeux suivis, " + imp.cols.length + " collection(s). Que faire ?";
+      $("impBar").hidden = false;
+    });
+  });
+  $("impMerge").addEventListener("click", function () { if (pendingImp) { mergeInto(S, pendingImp); afterImport(); note("Liste fusionnée."); } });
+  $("impReplace").addEventListener("click", function () { if (pendingImp) { S = pendingImp; afterImport(); note("Liste remplacée."); } });
+  $("impCancel").addEventListener("click", endImport);
+
+  /* ---------- événements : statistiques ---------- */
+  $("viewStats").addEventListener("change", function (e) {
+    if (!e.target || e.target.id !== "cmpFile") return;
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    readBackup(f, function (err, imp) {
+      if (err) { note("Ce fichier n’est pas un export valide de la Marouthèque."); return; }
+      CMP = imp; renderStats();
+    });
+  });
+  $("viewStats").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act='copy']"); if (!b) return;
+    var text = $("sumText").textContent;
+    var done = function () { b.textContent = "Copié"; };
+    try { navigator.clipboard.writeText(text).then(done, function () { var r = document.createRange(); r.selectNodeContents($("sumText")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Sélectionné : copiez avec Ctrl+C"; }); }
+    catch (err) { b.textContent = "Sélectionnez le texte pour le copier"; }
+  });
+
+  function showTab(stats) {
+    $("tabCat").setAttribute("aria-selected", !stats); $("tabStats").setAttribute("aria-selected", stats);
+    $("viewCat").hidden = stats; $("viewCat").style.display = stats ? "none" : "flex";
+    $("viewStats").hidden = !stats; $("viewStats").style.display = stats ? "flex" : "none";
+    if (stats) renderStats();
+  }
+  $("tabCat").addEventListener("click", function () { showTab(false); });
+  $("tabStats").addEventListener("click", function () { showTab(true); });
+
+  /* ---------- démarrage ---------- */
+  function initStore() {
+    var local = loadLocal();
+    if (local) S = normalize(local);
+    applyTheme(); refreshFilters(); render(); noteIdle();
+    if (!window.claude || !claude.use) return;
+    Promise.all([claude.use("db"), claude.use("user")]).then(function (r) {
+      var db = r[0], user = r[1];
+      if (!db || !user) return null;
+      return user.id().then(function (id) {
+        if (!id) return null;
+        var doc = db.doc("data/users/" + id + "/library");
+        return doc.get().then(function (snap) {
+          dbDoc = doc;
+          if (snap.exists) { S = normalize(snap.data()); saveLocal(); }
+          applyTheme(); refreshFilters(); render(); noteIdle();
+          if (!snap.exists && hasData()) flush();
+        });
+      });
+    }).catch(function () {});
+  }
+
+  initStore();
+})();
+</script>
+
+</body>
+</html>
